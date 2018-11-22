@@ -1,0 +1,17 @@
+{
+  "name": "chocolate muffins",
+  "ingredients": {
+    "eggs" : 2 ,
+    "flour": 120,
+    "sugar": 120,
+    "cocoa": 25,
+    "chocolate": 40,
+    "butter": 100,
+    "baking powder": 5,
+    "baking soda": 1
+    "milk": 70
+  ],
+  "time": 45,
+  "procedure": "Melt the butter and mix it together with the eggs and suger until you obtain a creamy consistency. Add the flour, baking powder, baking soda and cocoa. Cut the chocolate in small pieces and add to the mixture together with the milk. Put in muffin forms and bake at 160°C for 30 minutes",
+  "portions": 12
+}
