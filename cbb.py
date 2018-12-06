@@ -7,6 +7,9 @@ Created on Thu Nov 29 12:50:17 2018
 from telepot.loop import MessageLoop
 import telepot
 import nltk
+import json
+import os
+
 nltk.download('averaged_perceptron_tagger')
 nltk.download('maxent_ne_chunker')
 nltk.download('words')
@@ -29,7 +32,12 @@ def greeting(tagged):
     return "HI"
 
 def makeIngredientsList():
-    return 5
+    ing_list = []
+    for recipe_file in os.listdir("recipes"):
+        recipe = json.loads(open("recipes/" + recipe_file).read())
+        for ingredient in recipe['ingredients'].keys():
+            ing_list.append(ingredient)
+    return ing_list
 
 def checkForIngredients(ingredients):
     return 4
@@ -71,7 +79,7 @@ def respond(tagged):
         return ingredients
     return "HII"
     
-MessageLoop(bot, handle).run_as_thread()
+# MessageLoop(bot, handle).run_as_thread()
 
 """Messages look like this: 
  {'message_id': 25, 
@@ -79,3 +87,4 @@ MessageLoop(bot, handle).run_as_thread()
  'chat': {'id': 271994095, 'first_name': 'Posh', 'type': 'private'}, 
  'date': 1543493333, 
  'text': 'hiii'}"""
+
