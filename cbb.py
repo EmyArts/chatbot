@@ -17,6 +17,7 @@ nltk.download('tagsets')
 
 #bot = telepot.Bot('735651281:AAFrwg_8Q2hQ2KKZxg81k0pEsHFPvzyhaW8')
 #print(bot.getMe())
+ing_list = makeIngredientsList()
 
 def chat(dic):
     if 'from' in dic.keys():
@@ -41,9 +42,6 @@ def makeIngredientsList():
             ing_list.append(ingredient)
     return ing_list
 
-def checkForIngredients(ingredients):
-    return 4
-
 def identifyRecipeFromIngredients(ingredients):
     return 2
 
@@ -51,12 +49,18 @@ def identifyRecipeFromTime(time):
     return 7
 
 def identifyIngredientsInText(tagged):
-    return "HI"
+    indices = intersectionNoun(ing_list, tagged)
+    if len(indices) == 0:
+        return None
+    else:
+        ingredients = []
+        for i in indices:
+            ingredients.append(tagged[i][0])
+        return ingredients
 
 def identifyTimeInText(tagged):
     time = ["minutes", "mins", "min", "h", "hour", "hours", "hrs" ]
-    #print(tagged[0][0])
-    intersect = intersection(time, tagged)
+    intersect = intersectionSimple(time, tagged)
     if intersect == -1:
         return None
     else:
@@ -65,15 +69,20 @@ def identifyTimeInText(tagged):
                 return tagged[i][0] 
     return None
 
-def intersection(lst1, lst2): 
-    lst1 = [x.lower() for x in lst1]
+def intersectionSimple(lst1, tagged):
     for value in lst1:
-        for tup in lst2:
+        for tup in tagged:
             if value == tup[0].lower():
-                return lst2.index(tup)
-    return -1         
-    #lst3 = [value for value in lst1 if value in lst2] 
-    #return lst3 
+                return tagged.index(tup)
+    return -1
+
+def intersectionNoun(lst1, tagged):
+    indices = set()
+    for value in ing_list:
+        for tup in tagged:
+            if value == tup[0].lower() or "NN" in tup[1] and tup[0].lower() in value:
+                indices.add(tagged.index(tup))
+    return indices
 
 def handle(msg):
     print(msg)
@@ -98,16 +107,12 @@ def respond(tagged):
         return recipe
     ingredients = identifyIngredientsInText(tagged)
     if not ingredients == None:
-        return ingredients
+        recipe = identifyRecipeFromIngredients(ingredients)
+        return recipe
     return "HII"
-<<<<<<< HEAD
   
-print(respond([('Hi', 'NNP'), (',', ','), ('I', 'PRP'), ('want', 'VBP'), ('to', 'TO'), ('cook', 'VB'), ('and', 'CC'), ('only', 'RB'), ('have', 'VBP'), ('20', 'CD'), ('Minutes', 'NNPS'), (',', ','), ('what', 'WP'), ('should', 'MD'), ('I', 'PRP'), ('make', 'VB'), ('?', '.')]))
+print(respond( [('I', 'PRP'), ('want', 'VBP'), ('to', 'TO'), ('cook', 'VB'), (',', ','), ('but', 'CC'), ('I', 'PRP'), ('already', 'RB'), ('have', 'VBP'), ('celery', 'NN'), ('carrots', 'NN'), (',', ','), ('what', 'WP'), ('should', 'MD'), ('I', 'PRP'), ('make', 'VB'), ('?', '.')]))
 #MessageLoop(bot, handle).run_as_thread()
-=======
-    
-# MessageLoop(bot, handle).run_as_thread()
->>>>>>> origin/master
 
 """Messages look like this: 
  {'message_id': 25, 
@@ -121,7 +126,4 @@ print(respond([('Hi', 'NNP'), (',', ','), ('I', 'PRP'), ('want', 'VBP'), ('to', 
  [('I', 'PRP'), ('want', 'VBP'), ('to', 'TO'), ('cook', 'VB'), (',', ','), ('but', 'CC'), ('I', 'PRP'), ('already', 'RB'), ('have', 'VBP'), ('celery', 'NN'), (',', ','), ('what', 'WP'), ('should', 'MD'), ('I', 'PRP'), ('make', 'VB'), ('?', '.')]
  
  """
-=======
- 'text': 'hiii'}"""
 
->>>>>>> origin/master
