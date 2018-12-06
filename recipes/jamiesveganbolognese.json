@@ -1,6 +1,6 @@
 {
   "name": "Jamie's Vegan Bolognese",
-  "ingredients": [
+  "ingredients": {
     "celery sticks": 2,
     "carrots": 2,
     "red onions": 2,
@@ -14,7 +14,7 @@
     "salt": 0,
     "pepper": 0,
     "Italian herbs": 0
-  ],
+  },
   "time": 70,
   "procedure": "Put a pan with a couple of tablespoons of olive oil into a pan on medium heat. Chop celery, garlic, onions and carrots finely and add to pan. Let it sweat with lid on for about 15-20 minutes. Parallel, put dried porcini in bowl, add hot water and let sit. After the 15-20 minutes turn up heat a little. Add a couple of bay leaves. Take porcini out of water (keep water) and chop finely. Add porcini and some of their water to the pan. Add can-diced tomatoes and hydrated lentils to the pan. Turn heat down again. Add seasoning. Boil spaghetti in water in seperate pot (instruction on the packaging). Add pasta water to saucepan if sauce becomes to dry.",
   "portions: 4
