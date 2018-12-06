@@ -21,8 +21,30 @@ def chat(dic):
             senderid = sender['id']
             print(senderid)
             if 'text' in dic.keys():
-                reply = processText(dic['text'])
+                tagged = processText(dic['text'])
+                reply = respond(tagged)
                 bot.sendMessage(senderid, reply)
+
+def greeting(tagged):
+    return "HI"
+
+def makeIngredientsList():
+    return 5
+
+def checkForIngredients(ingredients):
+    return 4
+
+def identifyRecipeFromIngredients(ingredients):
+    return 2
+
+def identifyRecipeFromTime():
+    return 7
+
+def identifyIngredientsInText(tagged):
+    return "HI"
+
+def identifyTimeInText(tagged):
+    return "HI"
 
 def handle(msg):
     print(msg)
@@ -33,13 +55,21 @@ def processText(text):
     print(tokens)
     tagged = nltk.pos_tag(tokens)
     print(tagged)
-    entities = nltk.chunk.ne_chunk(tagged)
-    print(entities)
-    
-    if text == 'hi':
-        return 'Hello, how can I help you?'
-    else:
-        return 'Yooo'
+    #entities = nltk.chunk.ne_chunk(tagged)
+    #print(entities)
+    return tagged
+
+def respond(tagged):
+    greet = greeting(tagged)
+    if not greet == None:
+        return greet
+    time = identifyTimeInText(tagged)
+    if not time == None:
+        return time
+    ingredients = identifyIngredientsInText(tagged)
+    if not ingredients == None:
+        return ingredients
+    return "HII"
     
 MessageLoop(bot, handle).run_as_thread()
 
