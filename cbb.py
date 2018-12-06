@@ -7,6 +7,9 @@ Created on Thu Nov 29 12:50:17 2018
 from telepot.loop import MessageLoop
 import telepot
 import nltk
+import json
+import os
+
 nltk.download('averaged_perceptron_tagger')
 nltk.download('maxent_ne_chunker')
 nltk.download('words')
@@ -31,7 +34,12 @@ def greeting(tagged):
     return None
 
 def makeIngredientsList():
-    return 5
+    ing_list = []
+    for recipe_file in os.listdir("recipes"):
+        recipe = json.loads(open("recipes/" + recipe_file).read())
+        for ingredient in recipe['ingredients'].keys():
+            ing_list.append(ingredient)
+    return ing_list
 
 def checkForIngredients(ingredients):
     return 4
@@ -92,18 +100,28 @@ def respond(tagged):
     if not ingredients == None:
         return ingredients
     return "HII"
+<<<<<<< HEAD
   
 print(respond([('Hi', 'NNP'), (',', ','), ('I', 'PRP'), ('want', 'VBP'), ('to', 'TO'), ('cook', 'VB'), ('and', 'CC'), ('only', 'RB'), ('have', 'VBP'), ('20', 'CD'), ('Minutes', 'NNPS'), (',', ','), ('what', 'WP'), ('should', 'MD'), ('I', 'PRP'), ('make', 'VB'), ('?', '.')]))
 #MessageLoop(bot, handle).run_as_thread()
+=======
+    
+# MessageLoop(bot, handle).run_as_thread()
+>>>>>>> origin/master
 
 """Messages look like this: 
  {'message_id': 25, 
  'from': {'id': 271994095, 'is_bot': False, 'first_name': 'Posh', 'language_code': 'de'}, 
  'chat': {'id': 271994095, 'first_name': 'Posh', 'type': 'private'}, 
  'date': 1543493333, 
+<<<<<<< HEAD
  'text': 'hiii'}
  
  tagged looks like this: 
  [('I', 'PRP'), ('want', 'VBP'), ('to', 'TO'), ('cook', 'VB'), (',', ','), ('but', 'CC'), ('I', 'PRP'), ('already', 'RB'), ('have', 'VBP'), ('celery', 'NN'), (',', ','), ('what', 'WP'), ('should', 'MD'), ('I', 'PRP'), ('make', 'VB'), ('?', '.')]
  
  """
+=======
+ 'text': 'hiii'}"""
+
+>>>>>>> origin/master
