@@ -15,9 +15,15 @@ nltk.download('maxent_ne_chunker')
 nltk.download('words')
 nltk.download('tagsets')
 
-#bot = telepot.Bot('735651281:AAFrwg_8Q2hQ2KKZxg81k0pEsHFPvzyhaW8')
-#print(bot.getMe())
-ing_list = makeIngredientsList()
+
+def makeIngredientsList():
+    ing_list = []
+    for recipe_file in os.listdir("recipes"):
+        recipe = json.loads(open("recipes/" + recipe_file).read())
+        for ingredient in recipe['ingredients'].keys():
+            ing_list.append(ingredient)
+    return ing_list
+
 
 def chat(dic):
     if 'from' in dic.keys():
@@ -29,18 +35,10 @@ def chat(dic):
                 tagged = processText(dic['text'])
                 reply = respond(tagged)
                 print(reply)
-                #bot.sendMessage(senderid, reply)
+                bot.sendMessage(senderid, reply)
 
 def greeting(tagged):
     return None
-
-def makeIngredientsList():
-    ing_list = []
-    for recipe_file in os.listdir("recipes"):
-        recipe = json.loads(open("recipes/" + recipe_file).read())
-        for ingredient in recipe['ingredients'].keys():
-            ing_list.append(ingredient)
-    return ing_list
 
 def identifyRecipeFromIngredients(ingredients):
     return 2
@@ -80,7 +78,7 @@ def intersectionNoun(lst1, tagged):
     indices = set()
     for value in ing_list:
         for tup in tagged:
-            if value == tup[0].lower() or "NN" in tup[1] and tup[0].lower() in value:
+            if "NN" in tup[1] and tup[0].lower() in value and len(tup[0]) > 1:
                 indices.add(tagged.index(tup))
     return indices
 
@@ -90,12 +88,9 @@ def handle(msg):
     
 def processText(text):
     tokens = nltk.word_tokenize(text)
-    print(tokens)
     tagged = nltk.pos_tag(tokens)
-    print(tagged)
     #entities = nltk.chunk.ne_chunk(tagged)
-    #print(entities)
-    return tokens
+    return tagged
 
 def respond(tagged):
     greet = greeting(tagged)
@@ -103,16 +98,22 @@ def respond(tagged):
         return greet
     time = identifyTimeInText(tagged)
     if not time == None:
+        return time
         recipe = identifyRecipeFromTime(time)
         return recipe
     ingredients = identifyIngredientsInText(tagged)
     if not ingredients == None:
+        return ingredients
         recipe = identifyRecipeFromIngredients(ingredients)
         return recipe
-    return "HII"
-  
-print(respond( [('I', 'PRP'), ('want', 'VBP'), ('to', 'TO'), ('cook', 'VB'), (',', ','), ('but', 'CC'), ('I', 'PRP'), ('already', 'RB'), ('have', 'VBP'), ('celery', 'NN'), ('carrots', 'NN'), (',', ','), ('what', 'WP'), ('should', 'MD'), ('I', 'PRP'), ('make', 'VB'), ('?', '.')]))
-#MessageLoop(bot, handle).run_as_thread()
+    
+#print(respond( [('I', 'PRP'), ('want', 'VBP'), ('to', 'TO'), ('cook', 'VB'), (',', ','), ('but', 'CC'), ('I', 'PRP'), ('already', 'RB'), ('have', 'VBP'), ('celery', 'NN'), ('carrots', 'NN'), (',', ','), ('what', 'WP'), ('should', 'MD'), ('I', 'PRP'), ('make', 'VB'), ('?', '.')]))
+
+ing_list = makeIngredientsList()
+bot = telepot.Bot('735651281:AAFrwg_8Q2hQ2KKZxg81k0pEsHFPvzyhaW8')
+print(bot.getMe())
+print(ing_list)
+MessageLoop(bot, handle).run_as_thread()
 
 """Messages look like this: 
  {'message_id': 25, 
