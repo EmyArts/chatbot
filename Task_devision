@@ -1,5 +1,6 @@
-Function: list ingredients
-Greeting
-Function: identify ingredients
-Function: identify time
+Function: list ingredients > E
+Function: list time > E
+Greeting > E
+Function: identify ingredients > S
+Function: identify time > S
 Function: communicate recipe
