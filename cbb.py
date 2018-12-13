@@ -41,10 +41,22 @@ def greeting(tagged):
     return None
 
 def identifyRecipeFromIngredients(ingredients):
-    return 2
+    rec_list = []
+    for recipe_file in os.listdir("recipes"):
+        recipe = json.loads(open("recipes/" + recipe_file).read())
+        for rec_ingredient in recipe['ingredients'].keys():
+            if rec_ingredient in ingredients:
+                if not recipe['name'] in rec_list:
+                    rec_list.append(recipe['name'])
+    return rec_list
 
 def identifyRecipeFromTime(time):
-    return 7
+    rec_list = []
+    for recipe_file in os.listdir("recipes"):
+        recipe = json.loads(open("recipes/" + recipe_file).read())
+        if time >= recipe['time']:
+                rec_list.append(recipe['name'])
+    return rec_list
 
 def identifyIngredientsInText(tagged):
     indices = intersectionNoun(ing_list, tagged)
