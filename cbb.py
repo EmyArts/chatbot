@@ -9,20 +9,28 @@ import telepot
 import nltk
 import json
 import os
+from nltk.stem import WordNetLemmatizer
+from nltk.corpus import wordnet as wn
+
+
 
 nltk.download('averaged_perceptron_tagger')
 nltk.download('maxent_ne_chunker')
 nltk.download('words')
 nltk.download('tagsets')
+nltk.download('wordnet')
+  
 
+wnl = WordNetLemmatizer()
+ingredientset = set()
 
-def makeIngredientsList():
-    ing_list = []
+def makeIngredientsSet():
+    ing_set = set()
     for recipe_file in os.listdir("recipes"):
         recipe = json.loads(open("recipes/" + recipe_file).read())
         for ingredient in recipe['ingredients'].keys():
-            ing_list.append(ingredient)
-    return ing_list
+            ing_set.add(ingredient)
+    return ing_set
 
 
 def chat(dic):
@@ -59,14 +67,11 @@ def identifyRecipeFromTime(time):
     return rec_list
 
 def identifyIngredientsInText(tagged):
-    indices = intersectionNoun(ing_list, tagged)
-    if len(indices) == 0:
-        return None
-    else:
-        ingredients = []
-        for i in indices:
-            ingredients.append(tagged[i][0])
-        return ingredients
+    ingInText = set() #set of ingredients in  text
+    for tup in tagged:
+        if isIngredient(tup[0]):
+            ingInText.add(tup[0])
+    return ingInText
 
 def identifyTimeInText(tagged):
     time = ["minutes", "mins", "min", "h", "hour", "hours", "hrs" ]
@@ -86,9 +91,24 @@ def intersectionSimple(lst1, tagged):
                 return tagged.index(tup)
     return -1
 
-def intersectionNoun(lst1, tagged):
+def isIngredient(word):
+    reject_synsets = ['meal.n.01', 'meal.n.02', 'dish.n.02', 'vitamin.n.01']
+    reject_synsets = set(wn.synset(w) for w in reject_synsets)
+    accept_synsets = ['food.n.01', 'food.n.02']
+    accept_synsets = set(wn.synset(w) for w in accept_synsets)
+    for word_synset in wn.synsets(word, wn.NOUN):
+        all_synsets = set(word_synset.closure(lambda s: s.hypernyms()))
+        all_synsets.add(word_synset)
+        for synset in reject_synsets:
+            if synset in all_synsets:
+                return False
+        for synset in accept_synsets:
+            if synset in all_synsets:
+                return True
+
+def intersectionWord(lst1, tagged):
     indices = set()
-    for value in ing_list:
+    for value in ing_set:
         for tup in tagged:
             if "NN" in tup[1] and tup[0].lower() in value and len(tup[0]) > 1:
                 indices.add(tagged.index(tup))
@@ -118,14 +138,18 @@ def respond(tagged):
         return ingredients
         recipe = identifyRecipeFromIngredients(ingredients)
         return recipe
-    
-#print(respond( [('I', 'PRP'), ('want', 'VBP'), ('to', 'TO'), ('cook', 'VB'), (',', ','), ('but', 'CC'), ('I', 'PRP'), ('already', 'RB'), ('have', 'VBP'), ('celery', 'NN'), ('carrots', 'NN'), (',', ','), ('what', 'WP'), ('should', 'MD'), ('I', 'PRP'), ('make', 'VB'), ('?', '.')]))
 
-ing_list = makeIngredientsList()
-bot = telepot.Bot('735651281:AAFrwg_8Q2hQ2KKZxg81k0pEsHFPvzyhaW8')
-print(bot.getMe())
-print(ing_list)
-MessageLoop(bot, handle).run_as_thread()
+
+ing_set = makeIngredientsSet()    
+food = wn.synset('food.n.02')
+foodlist = list(set([w for s in food.closure(lambda s:s.hyponyms()) for w in s.lemma_names()]))
+print(respond( [('I', 'PRP'), ('want', 'VBP'), ('to', 'TO'), ('cook', 'VB'), (',', ','), ('but', 'CC'), ('I', 'PRP'), ('already', 'RB'), ('have', 'VBP'), ('celery', 'NN'), ('carrots', 'NN'), (',', ','), ('what', 'WP'), ('should', 'MD'), ('I', 'PRP'), ('make', 'VB'), ('?', '.')]))
+print(ing_set)
+
+#bot = telepot.Bot('735651281:AAFrwg_8Q2hQ2KKZxg81k0pEsHFPvzyhaW8')
+#print(bot.getMe())
+#print(ing_list)
+#MessageLoop(bot, handle).run_as_thread()
 
 """Messages look like this: 
  {'message_id': 25, 
