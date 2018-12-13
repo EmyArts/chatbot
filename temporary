@@ -13,3 +13,5 @@
                 return True
     return word in wordlists.ingredients
     
+    
+    https://github.com/JoshRosen/cmps140_creative_cooking_assistant/blob/master/nlu/ingredients.py
