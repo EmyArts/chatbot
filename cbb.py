@@ -9,6 +9,7 @@ import telepot
 import nltk
 import json
 import os
+import time as t
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import wordnet as wn
 
@@ -22,9 +23,6 @@ nltk.download('wordnet')
   
 
 wnl = WordNetLemmatizer()
-
-def analyseReply(tagged): #True for yes, False for no
-    return True
 
 def chat(dic):
     if 'from' in dic.keys():
@@ -72,7 +70,7 @@ def identifyRecipeFromTime(time):
     rec_list = []
     for recipe_file in os.listdir("recipes"):
         recipe = json.loads(open("recipes/" + recipe_file).read())
-        if time >= recipe['time']:
+        if int(time) >= int(recipe['time']):
                 rec_list.append(recipe['name'])
     return rec_list
 
@@ -80,19 +78,37 @@ def identifyIngredientsInText(tagged):
     ingInText = set() #set of ingredients in  text
     for tup in tagged:
         if isIngredient(tup[0]):
-            ingInText.add(wnl.lemmatize(tup[0]))
+            ingInText.add(wnl.lemmatize(tup[0].lower()))
     return ingInText
 
 def identifyTimeInText(tagged):
-    time = ["minutes", "mins", "min", "h", "hour", "hours", "hrs" ]
-    intersect = intersectionSimple(time, tagged)
-    if intersect == -1:
+    time_m = ["minutes", "mins", "min"]
+    time_h = ["h", "hour", "hours", "hrs"]
+    intersect_m = intersectionSimple(time_m, tagged)
+    intersect_h = intersectionSimple(time_h, tagged)
+    if intersect_m == -1 and intersect_h == -1:
         return None
-    else:
-        for i in range(0,intersect):
+    elif not intersect_m == -1:
+        for i in range(0,intersect_m):
             if tagged[i][1] == "CD":
                 return tagged[i][0] 
+    elif not intersect_h == -1:
+        for i in range(0,intersect_h):
+            if tagged[i][1] == "CD":
+                return int(tagged[i][0])*60
     return None
+
+def identifyThanks(tagged):
+    if not intersectionComplex(["thank", "thx"], tagged) == -1:
+        return True
+    return False
+
+def identifyYesNo(tagged):
+    if 'no' in tagged[0][0].lower() or 'nah' in tagged[0][0].lower() or 'nope' in tagged[0][0].lower():
+        return False
+    elif 'yes' in tagged[0][0].lower() or 'okay' in tagged[0][0].lower() or 'yeah' in tagged[0][0].lower() or 'sure' in tagged[0][0].lower():
+        return True
+    return True
 
 def isIngredient(word):
     reject_synsets = ['meal.n.01', 'meal.n.02', 'dish.n.02', 'vitamin.n.01']
@@ -116,6 +132,14 @@ def intersectionSimple(lst1, tagged):
                 return tagged.index(tup)
     return -1
 
+def intersectionComplex(lst1, tagged):
+    for value in lst1:
+        for tup in tagged:
+            if value in tup[0].lower():
+                return tagged.index(tup)
+    return -1
+
+
 def makeIngredientsSet():
     ing_set = set()
     for recipe_file in os.listdir("recipes"):
@@ -133,14 +157,17 @@ def processText(text):
 def respond(senderid, tagged):
     global status
     global current_recipe
+    t.sleep(1)
     skip = False
+    thx = identifyThanks(tagged)
+    if thx:
+        bot.sendMessage(senderid, str("You're welcome!"))
     if status == 0:
         current_recipe = None
         bot.sendMessage(senderid, str("Hi!"))
         status = 1
     if status == 1:
         recipe = identifyRecipeFromName(tagged)
-        print(recipe)
         if not recipe == None:
             #get ingredient list of recipe
             current_recipe = recipe
@@ -155,21 +182,29 @@ def respond(senderid, tagged):
                 if len(recipes) == 0:
                     bot.sendMessage(senderid, "I don't have any recipe for your request :( ")
                 else:
-                    bot.sendMessage(senderid, "I have found the following recipes: " + str(recipes))
+                    recString = ""
+                    for r in recipes:
+                        recString = recString + " " + str(r)
+                    bot.sendMessage(senderid, "I have found the following recipes: " + recString)
+                    bot.sendMessage(senderid, " Which one would you like to make?")
                 skip = True
         if not skip:        
             ingredients = identifyIngredientsInText(tagged)
-            if not ingredients == None:
+            if (not ingredients == None) and len(ingredients) > 0:
                 recipes = identifyRecipeFromIngredients(ingredients)
                 if len(recipes) == 0:
                     bot.sendMessage(senderid, "I don't have any recipe for your request :( ")
                 else:
-                    bot.sendMessage(senderid, "I have found the following recipes: " + str(recipes))
+                    recString = ""
+                    for r in recipes:
+                        recString = recString + " " + str(r)
+                    bot.sendMessage(senderid, "I have found the following recipes: " + recString)
+                    bot.sendMessage(senderid, " Which one would you like to make?")
                 skip = True
         if not skip:
             bot.sendMessage(senderid, "How can I help you today?")
     if not skip and (status == 2 or status == 3):
-        word = analyseReply(tagged)
+        word = identifyYesNo(tagged)
         if not word and status == 2: #negative 
             bot.sendMessage(senderid, "Do you still want to continue with this recipe?")
             status = 3
@@ -185,6 +220,7 @@ def stringOutOfTagged(tagged):
     for t in tagged:
         string = string + " " + t[0]
     return string
+       
     
 ing_set = makeIngredientsSet()    
 food = wn.synset('food.n.02')
@@ -193,6 +229,7 @@ foodlist = list(set([w for s in food.closure(lambda s:s.hyponyms()) for w in s.l
 #print(ing_set)
 status = 0
 current_recipe = None
+reply_keyboard = [['Yes', 'No']]
 bot = telepot.Bot('735651281:AAFrwg_8Q2hQ2KKZxg81k0pEsHFPvzyhaW8')
 print(bot.getMe())
 #print(ing_set)
