@@ -56,6 +56,19 @@ def identifyRecipeFromName(tagged):
             return recipe        
     return rec
 
+def identifyRecipeFromID(tagged):
+    rec = None
+    recid = -1
+    for ta in tagged:
+        if ta[1] == 'CD':
+            recid = ta[0]
+    for recipe_file in os.listdir("recipes"):
+        recipe = json.loads(open("recipes/" + recipe_file).read())
+        rid = recipe['id']
+        if int(recid) == rid:
+            return recipe        
+    return rec
+
 def identifyRecipeFromIngredients(ingredients):
     rec_set = set()
     for recipe_file in os.listdir("recipes"):
@@ -63,7 +76,7 @@ def identifyRecipeFromIngredients(ingredients):
         for rec_ingredient in recipe['ingredients'].keys():
             for i in ingredients:
                 if checkIngredients(rec_ingredient, i):
-                    rec_set.add(recipe['name'])
+                    rec_set.add(recipe['name'] + " (" + str(recipe['id']) + ")")
     return rec_set
 
 def identifyRecipeFromTime(time):
@@ -71,7 +84,7 @@ def identifyRecipeFromTime(time):
     for recipe_file in os.listdir("recipes"):
         recipe = json.loads(open("recipes/" + recipe_file).read())
         if int(time) >= int(recipe['time']):
-                rec_list.append(recipe['name'])
+                rec_list.append(recipe['name'] + "(" + str(recipe['id']) + ")")
     return rec_list
 
 def identifyIngredientsInText(tagged):
@@ -139,6 +152,12 @@ def intersectionComplex(lst1, tagged):
                 return tagged.index(tup)
     return -1
 
+def listToString(l):
+    string = ""
+    for ll in l:
+        string = string + " " + str(ll)
+    return string
+    
 
 def makeIngredientsSet():
     ing_set = set()
@@ -162,12 +181,22 @@ def respond(senderid, tagged):
     thx = identifyThanks(tagged)
     if thx:
         bot.sendMessage(senderid, str("You're welcome!"))
-    if status == 0:
+        skip = True
+    if status == 0 and not skip:
         current_recipe = None
         bot.sendMessage(senderid, str("Hi!"))
         status = 1
     if status == 1:
         recipe = identifyRecipeFromName(tagged)
+        if not recipe == None:
+            #get ingredient list of recipe
+            current_recipe = recipe
+            bot.sendMessage(senderid, str(current_recipe["ingredients"]))
+            bot.sendMessage(senderid, "Do you have all the ingredients for this recipe?")
+            status = 2
+            skip = True
+        recipe = identifyRecipeFromID(tagged)
+        print(recipe)
         if not recipe == None:
             #get ingredient list of recipe
             current_recipe = recipe
@@ -182,11 +211,9 @@ def respond(senderid, tagged):
                 if len(recipes) == 0:
                     bot.sendMessage(senderid, "I don't have any recipe for your request :( ")
                 else:
-                    recString = ""
-                    for r in recipes:
-                        recString = recString + " " + str(r)
+                    recString = listToString(recipes)
                     bot.sendMessage(senderid, "I have found the following recipes: " + recString)
-                    bot.sendMessage(senderid, " Which one would you like to make?")
+                    bot.sendMessage(senderid, " Which one would you like to make? (please answer by using the name or the ID of the recipe)")
                 skip = True
         if not skip:        
             ingredients = identifyIngredientsInText(tagged)
@@ -195,17 +222,15 @@ def respond(senderid, tagged):
                 if len(recipes) == 0:
                     bot.sendMessage(senderid, "I don't have any recipe for your request :( ")
                 else:
-                    recString = ""
-                    for r in recipes:
-                        recString = recString + " " + str(r)
+                    recString = listToString(recipes)
                     bot.sendMessage(senderid, "I have found the following recipes: " + recString)
-                    bot.sendMessage(senderid, " Which one would you like to make?")
+                    bot.sendMessage(senderid, "Which one would you like to make? (please answer by using the name or the ID of the recipe)")
                 skip = True
         if not skip:
             bot.sendMessage(senderid, "How can I help you today?")
     if not skip and (status == 2 or status == 3):
         word = identifyYesNo(tagged)
-        if not word and status == 2: #negative 
+        if not word and status == 2: 
             bot.sendMessage(senderid, "Do you still want to continue with this recipe?")
             status = 3
         elif not word and status == 3:
@@ -222,7 +247,7 @@ def stringOutOfTagged(tagged):
     return string
        
     
-ing_set = makeIngredientsSet()    
+#ing_set = makeIngredientsSet()    
 food = wn.synset('food.n.02')
 foodlist = list(set([w for s in food.closure(lambda s:s.hyponyms()) for w in s.lemma_names()]))
 #print(respond( [('I', 'PRP'), ('want', 'VBP'), ('to', 'TO'), ('cook', 'VB'), (',', ','), ('but', 'CC'), ('I', 'PRP'), ('already', 'RB'), ('have', 'VBP'), ('celery', 'NN'), ('carrots', 'NN'), (',', ','), ('what', 'WP'), ('should', 'MD'), ('I', 'PRP'), ('make', 'VB'), ('?', '.')]))
