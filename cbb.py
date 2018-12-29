@@ -201,6 +201,7 @@ def respond(senderid, tagged):
             #get ingredient list of recipe
             current_recipe = recipe
             bot.sendMessage(senderid, str(current_recipe["ingredients"]))
+            bot.sendMessage(senderid, "This recipe is for " + str(current_recipe["portions"]) + " portions.")
             bot.sendMessage(senderid, "Do you have all the ingredients for this recipe?")
             status = 2
             skip = True
