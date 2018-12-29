@@ -242,8 +242,8 @@ def respond(senderid, tagged):
 
 def stringOutOfTagged(tagged):
     string = ""
-    for t in tagged:
-        string = string + " " + t[0]
+    for ta in tagged:
+        string = string + " " + ta[0]
     return string
        
     
