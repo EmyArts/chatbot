@@ -117,11 +117,9 @@ def identifyThanks(tagged):
     return False
 
 def identifyYesNo(tagged):
-    if 'no' in tagged[0][0].lower() or 'nah' in tagged[0][0].lower() or 'nope' in tagged[0][0].lower():
-        return False
-    elif 'yes' in tagged[0][0].lower() or 'okay' in tagged[0][0].lower() or 'yeah' in tagged[0][0].lower() or 'sure' in tagged[0][0].lower():
+    if 'yes' in tagged[0][0].lower() or 'okay' in tagged[0][0].lower() or 'yeah' in tagged[0][0].lower() or 'sure' in tagged[0][0].lower():
         return True
-    return True
+    return False
 
 def isIngredient(word):
     reject_synsets = ['meal.n.01', 'meal.n.02', 'dish.n.02', 'vitamin.n.01']
