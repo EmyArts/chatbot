@@ -165,6 +165,16 @@ def makeIngredientsSet():
             ing_set.add(ingredient)
     return ing_set    
 
+def prettyIngredientList(ingdict):
+    pretty = ""
+    for key in ingdict.keys():
+        measurements = str(ingdict[key][0])
+        if(not str(ingdict[key][1]) == ""):
+            measurements =  measurements + """ """ + str(ingdict[key][1])
+        pretty = pretty + measurements + """ """ +  key + """
+"""
+    return pretty
+
 def processText(text):
     tokens = nltk.word_tokenize(text)
     tagged = nltk.pos_tag(tokens)
@@ -174,23 +184,22 @@ def processText(text):
 def respond(senderid, tagged):
     global status
     global current_recipe
-    t.sleep(1)
     skip = False
     thx = identifyThanks(tagged)
     if thx:
-        bot.sendMessage(senderid, str("You're welcome!"))
+        sendResponse(senderid, str("You're welcome!"))
         skip = True
     if status == 0 and not skip:
         current_recipe = None
-        bot.sendMessage(senderid, str("Hi!"))
+        sendResponse(senderid, str("Hi!"))
         status = 1
     if status == 1:
         recipe = identifyRecipeFromName(tagged)
         if not recipe == None:
             #get ingredient list of recipe
             current_recipe = recipe
-            bot.sendMessage(senderid, str(current_recipe["ingredients"]))
-            bot.sendMessage(senderid, "Do you have all the ingredients for this recipe?")
+            sendResponse(senderid, str(current_recipe["ingredients"]))
+            sendResponse(senderid, "Do you have all the ingredients for this recipe?")
             status = 2
             skip = True
         recipe = identifyRecipeFromID(tagged)
@@ -198,9 +207,9 @@ def respond(senderid, tagged):
         if not recipe == None:
             #get ingredient list of recipe
             current_recipe = recipe
-            bot.sendMessage(senderid, str(current_recipe["ingredients"]))
-            bot.sendMessage(senderid, "This recipe is for " + str(current_recipe["portions"]) + " portions.")
-            bot.sendMessage(senderid, "Do you have all the ingredients for this recipe?")
+            sendResponse(senderid, prettyIngredientList(current_recipe["ingredients"]))
+            sendResponse(senderid, "This recipe is for " + str(current_recipe["portions"]) + " portions.")
+            sendResponse(senderid, "Do you have all the ingredients for this recipe?")
             status = 2
             skip = True
         if not skip:
@@ -208,36 +217,40 @@ def respond(senderid, tagged):
             if not time == None:
                 recipes = identifyRecipeFromTime(time)
                 if len(recipes) == 0:
-                    bot.sendMessage(senderid, "I don't have any recipe for your request :( ")
+                    sendResponse(senderid, "I don't have any recipe for your request :( ")
                 else:
                     recString = listToString(recipes)
-                    bot.sendMessage(senderid, "I have found the following recipes: " + recString)
-                    bot.sendMessage(senderid, " Which one would you like to make? (please answer by using the name or the ID of the recipe)")
+                    sendResponse(senderid, "I have found the following recipes: " + recString)
+                    sendResponse(senderid, " Which one would you like to make? (please answer by using the name or the ID of the recipe)")
                 skip = True
         if not skip:        
             ingredients = identifyIngredientsInText(tagged)
             if (not ingredients == None) and len(ingredients) > 0:
                 recipes = identifyRecipeFromIngredients(ingredients)
                 if len(recipes) == 0:
-                    bot.sendMessage(senderid, "I don't have any recipe for your request :( ")
+                    sendResponse(senderid, "I don't have any recipe for your request :( ")
                 else:
                     recString = listToString(recipes)
-                    bot.sendMessage(senderid, "I have found the following recipes: " + recString)
-                    bot.sendMessage(senderid, "Which one would you like to make? (please answer by using the name or the ID of the recipe)")
+                    sendResponse(senderid, "I have found the following recipes: " + recString)
+                    sendResponse(senderid, "Which one would you like to make? (please answer by using the name or the ID of the recipe)")
                 skip = True
         if not skip:
-            bot.sendMessage(senderid, "How can I help you today?")
+            sendResponse(senderid, "How can I help you today?")
     if not skip and (status == 2 or status == 3):
         word = identifyYesNo(tagged)
         if not word and status == 2: 
-            bot.sendMessage(senderid, "Do you still want to continue with this recipe?")
             status = 3
         elif not word and status == 3:
-            bot.sendMessage(senderid, "K bye!")
+            sendResponse(senderid, "K bye!")
             status = 0
         elif word:
-            bot.sendMessage(senderid, str(current_recipe["procedure"]))
+            sendResponse(senderid, str(current_recipe["procedure"]))
             status = 0
+
+
+def sendResponse(senderid, message):
+    t.sleep(1)
+    bot.sendMessage(senderid, str(message))
 
 def stringOutOfTagged(tagged):
     string = ""

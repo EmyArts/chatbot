@@ -5,7 +5,7 @@
     "eggs": [1, ""],
     "flour": [75, "g"],
     "butter": [50, "g"],
-    "milk": [250, "ml"]s
+    "milk": [250, "ml"]
   },
   "time": 15,
   "procedure": "mix the egg to the flour. Add the milk bit by bit while stirring. Finally melt the butter in a pan and add it to the mixture. Poor the mixture in the pan until it covers the full surface when the borders turn golden color turn it around and bake for another minute",
