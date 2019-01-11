@@ -2,10 +2,10 @@
   "name": "pancakes",
   "id": 113,
   "ingredients": {
-    "eggs": 1,
-    "flour": 75,
-    "butter": 50,
-    "milk": 250
+    "eggs": [1, ""],
+    "flour": [75, "g"],
+    "butter": [50, "g"],
+    "milk": [250, "ml"]s
   },
   "time": 15,
   "procedure": "mix the egg to the flour. Add the milk bit by bit while stirring. Finally melt the butter in a pan and add it to the mixture. Poor the mixture in the pan until it covers the full surface when the borders turn golden color turn it around and bake for another minute",
