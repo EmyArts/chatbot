@@ -26,6 +26,15 @@ nltk.download('wordnet')
 
 wnl = WordNetLemmatizer()
 
+def adjustPortions(current_recipe, amount):
+    ingredients = current_recipe['ingredients']
+    old_amount = current_recipe['portions']
+    factor = amount/old_amount
+    for k in ingredients.keys():
+        ingredients[k][0] = float(ingredients[k][0]) * factor 
+        ingredients[k][0] = "{0:.2f}".format(round(ingredients[k][0],2))
+    return ingredients
+
 def chat(dic):
     if 'from' in dic.keys():
         sender = dic['from']
@@ -64,15 +73,11 @@ def identifyRecipeFromID(tagged):
     for ta in tagged:
         if ta[1] == 'CD':
             recid = ta[0]
+            recid = toFloat(recid)
     for recipe_file in os.listdir("recipes"):
         recipe = json.loads(open("recipes/" + recipe_file).read())
         rid = recipe['id']
-        try:
-            if int(recid) == rid:
-                return recipe
-        except:
-            recid = w2n.word_to_num(recid)
-            if int(recid) == rid:
+        if recid == float(rid):
                 return recipe
     return rec
 
@@ -83,7 +88,7 @@ def identifyRecipeFromIngredients(ingredients):
         for rec_ingredient in recipe['ingredients'].keys(): 
             for i in ingredients:
                 if checkIngredients(rec_ingredient, i):
-                    rec_arr.append(recipe['name'] + " (" + str(recipe['id']) + ")")
+                    rec_arr.append(recipe['name'] + " *" + str(recipe['id']) + "*")
     if len(ingredients) > 1:
         rec_arr = onlyMultipleInArray(rec_arr)
         return rec_arr
@@ -94,7 +99,7 @@ def identifyRecipeFromTime(time):
     for recipe_file in os.listdir("recipes"):
         recipe = json.loads(open("recipes/" + recipe_file).read())
         if int(time) >= int(recipe['time']):
-                rec_list.append(recipe['name'] + " (" + str(recipe['id']) + ")")
+                rec_list.append(recipe['name'] + " *" + str(recipe['id']) + "*")
     return rec_list
 
 def identifyIngredientsInText(tagged):
@@ -114,23 +119,22 @@ def identifyTimeInText(tagged):
     elif not intersect_m == -1:
         for i in range(0,intersect_m):
             if tagged[i][1] == "CD":
-                try:
-                    time_val = int(tagged[i][0])
-                except:
-                    time_val = w2n.word_to_num(tagged[i][0])
+                time_val = toFloat(tagged[i][0])
                 return time_val
     elif not intersect_h == -1:
         for i in range(0,intersect_h):
             if tagged[i][1] == "CD":
-                try:
-                    time_val = int(tagged[i][0])
-                except:
-                    time_val = w2n.word_to_num(tagged[i][0])
+                time_val = toFloat(tagged[i][0])
                 return time_val*60
     return None
 
 def identifyBye(tagged):
     if not intersectionComplex(["bye"], tagged) == -1:
+        return True
+    return False
+
+def identifyHelp(tagged):
+    if not intersectionSimple(["help"], tagged) == -1:
         return True
     return False
 
@@ -223,17 +227,21 @@ def respond(senderid, tagged):
     found = False
     thx = identifyThanks(tagged)
     bye = identifyBye(tagged)
+    hlp = identifyHelp(tagged)
     recipes = {}
     if thx:
         sendResponse(senderid, str("You're welcome!"))
         skip = True
-    if bye:
-        sendResponse(senderid, str("Good Bye!"))
+    if not skip and bye:
+        sendResponse(senderid, str("Goodbye!"))
         status = 0
+        skip = True
+    if not skip and hlp:
+        sendHelp(senderid)
         skip = True
     if status == 0 and not skip:
         current_recipe = None
-        sendResponse(senderid, str("Hi!"))
+        sendResponse(senderid, str("Hi, I'm Chef BOTticelliBOT, ready to suggest you a nice recipe. If you have any questions, please say *help*. How can I help you today?"))
         status = 1
     if status == 1:
         #checks if recipe name is mentioned
@@ -270,27 +278,45 @@ def respond(senderid, tagged):
                 else:
                     rec2 = identifyRecipeFromIngredients(ingredients)
                     if len(rec2) > 0:
-                        print(set(recipes))
-                        print(rec2)
                         recipes = set(recipes).intersection(rec2)
             if found:
                 sendFoundRecipes(senderid, recipes)
             elif skip: 
                 sendResponse(senderid, "Sorry, I did not find any recipes meeting your requirements.")
-            else:
-                sendResponse(senderid, "How can I help you today?")
-    if not skip and (status == 2 or status == 3):
+            elif len(tagged) > 1:
+                sendResponse(senderid, "Sorry, I did not understand.")
+    if not skip and not status == 0 and not status == 1:
         word = identifyYesNo(tagged)
-        if not word and status == 2: 
-            sendResponse(senderid, "Do you still want to continue with this recipe?")
-            status = 3
-        elif not word and status == 3:
-            sendResponse(senderid, "K bye!")
-            status = 0
-        elif word:
+        changestatus = False
+        if word:
             sendResponse(senderid, str(current_recipe["procedure"]))
             sendBonAppetit(senderid)
+            current_recipe = None
             status = 0
+        elif status == 2: 
+            sendResponse(senderid, "How many portions do you want to make instead?")
+            changestatus = True
+        elif status == 3:
+            #Identify the amount
+            for ta in tagged:
+                if ta[1] == 'CD':
+                    amount = toFloat(ta[0])
+            #recalculate
+            ingredients = adjustPortions(current_recipe, amount)
+            sendResponse(senderid, prettyIngredientList(ingredients))
+            sendResponse(senderid, "Do you have all the ingredients?")
+            changestatus = True
+        elif status == 4:
+            sendResponse(senderid, "Do you still want to continue with this recipe?")
+            changestatus = True
+        elif status == 5:
+            sendResponse(senderid, "K bye!")
+            current_recipe = None
+            changestatus = True
+            
+        if changestatus:
+            status += 1
+        
 
 def sendBonAppetit(senderid):
     array = ["Bon Appétit", "Guten Appetit", "Eet Smakelijk", " Enjoy your meal", "Buon appetito", "Vel bekomme", "Bom apetite", "¡Buen apetito", "Smaklig måltid"]
@@ -300,24 +326,33 @@ def sendBonAppetit(senderid):
 def sendFoundRecipe(senderid, recipe):
     sendResponse(senderid, prettyIngredientList(recipe["ingredients"]))
     sendResponse(senderid, "This recipe is for " + str(current_recipe["portions"]) + " portions.")
-    sendResponse(senderid, "Do you have all the ingredients for this recipe?")
+    sendResponse(senderid, "Do you want to make " + str(current_recipe["portions"]) + " portions?")
             
 def sendFoundRecipes(senderid, recipes):
     recString = listToString(recipes)
     sendResponse(senderid, "I have found the following recipes: " + recString)
-    sendResponse(senderid, " Which one would you like to make? (please answer by using the name or the ID of the recipe)")
+    sendResponse(senderid, " Which one would you like to make? (please answer by using the name or the *ID* of the recipe)")
+
+def sendHelp(senderid):
+    sendResponse(senderid, "My functionis to find a recipes based on your wishes. I can find a recipe below a *timelimit*, including an *individual ingredient*, *multiple ingredients* or a *combination* of all. Example: _I got one hour, carrots and celery._")
 
 def sendResponse(senderid, message):
     t.sleep(1)
-    bot.sendMessage(senderid, str(message))
+    bot.sendMessage(senderid, str(message),parse_mode="Markdown")
 
 def stringOutOfTagged(tagged):
     string = ""
     for ta in tagged:
         string = string + " " + ta[0]
     return string
-       
-    
+ 
+def toFloat(val):
+    try:
+        val = float(val * 1.0)
+    except:
+        val = w2n.word_to_num(val)
+    return val
+        
 #ing_set = makeIngredientsSet()    
 food = wn.synset('food.n.02')
 foodlist = list(set([w for s in food.closure(lambda s:s.hyponyms()) for w in s.lemma_names()]))
