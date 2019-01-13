@@ -334,7 +334,7 @@ def sendFoundRecipes(senderid, recipes):
     sendResponse(senderid, " Which one would you like to make? (please answer by using the name or the *ID* of the recipe)")
 
 def sendHelp(senderid):
-    sendResponse(senderid, "My functionis to find a recipes based on your wishes. I can find a recipe below a *timelimit*, including an *individual ingredient*, *multiple ingredients* or a *combination* of all. Example: _I got one hour, carrots and celery._")
+    sendResponse(senderid, "My function is to find a recipe based on your wishes. I can find a recipe below a *timelimit*, including an *individual ingredient*, *multiple ingredients* or a *combination* of all. Example: _I got one hour, carrots and celery._")
 
 def sendResponse(senderid, message):
     t.sleep(1)
