@@ -10,8 +10,10 @@ import nltk
 import json
 import os
 import time as t
+import random 
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import wordnet as wn
+from word2number import w2n
 
 
 
@@ -65,26 +67,34 @@ def identifyRecipeFromID(tagged):
     for recipe_file in os.listdir("recipes"):
         recipe = json.loads(open("recipes/" + recipe_file).read())
         rid = recipe['id']
-        if int(recid) == rid:
-            return recipe        
+        try:
+            if int(recid) == rid:
+                return recipe
+        except:
+            recid = w2n.word_to_num(recid)
+            if int(recid) == rid:
+                return recipe
     return rec
 
 def identifyRecipeFromIngredients(ingredients):
-    rec_set = set()
+    rec_arr = []
     for recipe_file in os.listdir("recipes"):
         recipe = json.loads(open("recipes/" + recipe_file).read())
-        for rec_ingredient in recipe['ingredients'].keys():
+        for rec_ingredient in recipe['ingredients'].keys(): 
             for i in ingredients:
                 if checkIngredients(rec_ingredient, i):
-                    rec_set.add(recipe['name'] + " (" + str(recipe['id']) + ")")
-    return rec_set
+                    rec_arr.append(recipe['name'] + " (" + str(recipe['id']) + ")")
+    if len(ingredients) > 1:
+        rec_arr = onlyMultipleInArray(rec_arr)
+        return rec_arr
+    return set(rec_arr)
 
 def identifyRecipeFromTime(time):
     rec_list = []
     for recipe_file in os.listdir("recipes"):
         recipe = json.loads(open("recipes/" + recipe_file).read())
         if int(time) >= int(recipe['time']):
-                rec_list.append(recipe['name'] + "(" + str(recipe['id']) + ")")
+                rec_list.append(recipe['name'] + " (" + str(recipe['id']) + ")")
     return rec_list
 
 def identifyIngredientsInText(tagged):
@@ -104,12 +114,25 @@ def identifyTimeInText(tagged):
     elif not intersect_m == -1:
         for i in range(0,intersect_m):
             if tagged[i][1] == "CD":
-                return tagged[i][0] 
+                try:
+                    time_val = int(tagged[i][0])
+                except:
+                    time_val = w2n.word_to_num(tagged[i][0])
+                return time_val
     elif not intersect_h == -1:
         for i in range(0,intersect_h):
             if tagged[i][1] == "CD":
-                return int(tagged[i][0])*60
+                try:
+                    time_val = int(tagged[i][0])
+                except:
+                    time_val = w2n.word_to_num(tagged[i][0])
+                return time_val*60
     return None
+
+def identifyBye(tagged):
+    if not intersectionComplex(["bye"], tagged) == -1:
+        return True
+    return False
 
 def identifyThanks(tagged):
     if not intersectionComplex(["thank", "thx"], tagged) == -1:
@@ -153,7 +176,8 @@ def intersectionComplex(lst1, tagged):
 def listToString(l):
     string = ""
     for ll in l:
-        string = string + " " + str(ll)
+        string = string + str(ll) + """
+"""
     return string
     
 
@@ -164,6 +188,17 @@ def makeIngredientsSet():
         for ingredient in recipe['ingredients'].keys():
             ing_set.add(ingredient)
     return ing_set    
+
+def onlyMultipleInArray(array):
+    unique = set()
+    multi = set()
+    for a in array:
+        if a in unique:
+            unique.remove(a)
+            multi.add(a)
+        else:
+            unique.add(a)
+    return multi
 
 def prettyIngredientList(ingdict):
     pretty = ""
@@ -185,68 +220,92 @@ def respond(senderid, tagged):
     global status
     global current_recipe
     skip = False
+    found = False
     thx = identifyThanks(tagged)
+    bye = identifyBye(tagged)
+    recipes = {}
     if thx:
         sendResponse(senderid, str("You're welcome!"))
+        skip = True
+    if bye:
+        sendResponse(senderid, str("Good Bye!"))
+        status = 0
         skip = True
     if status == 0 and not skip:
         current_recipe = None
         sendResponse(senderid, str("Hi!"))
         status = 1
     if status == 1:
+        #checks if recipe name is mentioned
         recipe = identifyRecipeFromName(tagged)
         if not recipe == None:
             #get ingredient list of recipe
             current_recipe = recipe
-            sendResponse(senderid, str(current_recipe["ingredients"]))
-            sendResponse(senderid, "Do you have all the ingredients for this recipe?")
+            sendFoundRecipe(senderid, recipe)
             status = 2
             skip = True
+        #checks if recipe ID is mentioned
         recipe = identifyRecipeFromID(tagged)
-        print(recipe)
         if not recipe == None:
             #get ingredient list of recipe
             current_recipe = recipe
-            sendResponse(senderid, prettyIngredientList(current_recipe["ingredients"]))
-            sendResponse(senderid, "This recipe is for " + str(current_recipe["portions"]) + " portions.")
-            sendResponse(senderid, "Do you have all the ingredients for this recipe?")
+            sendFoundRecipe(senderid, recipe)
             status = 2
             skip = True
+        #checks if time is mentioned
         if not skip:
             time = identifyTimeInText(tagged)
             if not time == None:
-                recipes = identifyRecipeFromTime(time)
-                if len(recipes) == 0:
-                    sendResponse(senderid, "I don't have any recipe for your request :( ")
-                else:
-                    recString = listToString(recipes)
-                    sendResponse(senderid, "I have found the following recipes: " + recString)
-                    sendResponse(senderid, " Which one would you like to make? (please answer by using the name or the ID of the recipe)")
                 skip = True
-        if not skip:        
+                recipes = identifyRecipeFromTime(time)
+                if len(recipes) > 0:
+                    found = True
+            #checks if ingredients are mentioned  
             ingredients = identifyIngredientsInText(tagged)
             if (not ingredients == None) and len(ingredients) > 0:
-                recipes = identifyRecipeFromIngredients(ingredients)
-                if len(recipes) == 0:
-                    sendResponse(senderid, "I don't have any recipe for your request :( ")
-                else:
-                    recString = listToString(recipes)
-                    sendResponse(senderid, "I have found the following recipes: " + recString)
-                    sendResponse(senderid, "Which one would you like to make? (please answer by using the name or the ID of the recipe)")
                 skip = True
-        if not skip:
-            sendResponse(senderid, "How can I help you today?")
+                if not found:
+                    recipes = identifyRecipeFromIngredients(ingredients)
+                    found = True
+                else:
+                    rec2 = identifyRecipeFromIngredients(ingredients)
+                    if len(rec2) > 0:
+                        print(set(recipes))
+                        print(rec2)
+                        recipes = set(recipes).intersection(rec2)
+            if found:
+                sendFoundRecipes(senderid, recipes)
+            elif skip: 
+                sendResponse(senderid, "Sorry, I did not find any recipes meeting your requirements.")
+            else:
+                sendResponse(senderid, "How can I help you today?")
     if not skip and (status == 2 or status == 3):
         word = identifyYesNo(tagged)
         if not word and status == 2: 
+            sendResponse(senderid, "Do you still want to continue with this recipe?")
             status = 3
         elif not word and status == 3:
             sendResponse(senderid, "K bye!")
             status = 0
         elif word:
             sendResponse(senderid, str(current_recipe["procedure"]))
+            sendBonAppetit(senderid)
             status = 0
 
+def sendBonAppetit(senderid):
+    array = ["Bon Appétit", "Guten Appetit", "Eet Smakelijk", " Enjoy your meal", "Buon appetito", "Vel bekomme", "Bom apetite", "¡Buen apetito", "Smaklig måltid"]
+    r = random.randint(0, len(array))
+    sendResponse(senderid, array[r] + "!")
+    
+def sendFoundRecipe(senderid, recipe):
+    sendResponse(senderid, prettyIngredientList(recipe["ingredients"]))
+    sendResponse(senderid, "This recipe is for " + str(current_recipe["portions"]) + " portions.")
+    sendResponse(senderid, "Do you have all the ingredients for this recipe?")
+            
+def sendFoundRecipes(senderid, recipes):
+    recString = listToString(recipes)
+    sendResponse(senderid, "I have found the following recipes: " + recString)
+    sendResponse(senderid, " Which one would you like to make? (please answer by using the name or the ID of the recipe)")
 
 def sendResponse(senderid, message):
     t.sleep(1)
