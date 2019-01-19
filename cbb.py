@@ -275,7 +275,8 @@ def respond(senderid, tagged):
                 skip = True
                 if not found:
                     recipes = identifyRecipeFromIngredients(ingredients)
-                    found = True
+                    if len(recipes) > 0:
+                        found = True
                 else:
                     rec2 = identifyRecipeFromIngredients(ingredients)
                     if len(rec2) > 0:
