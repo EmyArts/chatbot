@@ -210,7 +210,7 @@ def prettyIngredientList(ingdict):
         measurements = str(ingdict[key][0])
         if(not str(ingdict[key][1]) == ""):
             measurements =  measurements + """ """ + str(ingdict[key][1])
-        pretty = pretty + measurements + """ """ +  key + """
+        pretty = pretty + measurements + """ """ +  key + """ 
 """
     return pretty
 
@@ -250,7 +250,8 @@ def respond(senderid, tagged):
         if not recipe == None:
             #get ingredient list of recipe
             current_recipe = recipe
-            sendFoundRecipe(senderid, recipe)
+            sendResponse(senderid, "This recipe is intended for " + str(current_recipe["portions"]) + " portions.")
+            sendResponse(senderid, "How many portions do you want to make?")
             status = 2
             skip = True
         #checks if recipe ID is mentioned
@@ -258,7 +259,8 @@ def respond(senderid, tagged):
         if not recipe == None:
             #get ingredient list of recipe
             current_recipe = recipe
-            sendFoundRecipe(senderid, recipe)
+            sendResponse(senderid, "This recipe is intended for " + str(current_recipe["portions"]) + " portions.")
+            sendResponse(senderid, "How many portions do you want to make?")
             status = 2
             skip = True
         #checks if time is mentioned
@@ -297,9 +299,6 @@ def respond(senderid, tagged):
             current_recipe = None
             status = 0
         elif status == 2: 
-            sendResponse(senderid, "How many portions do you want to make instead?")
-            changestatus = True
-        elif status == 3:
             #Identify the amount
             for ta in tagged:
                 if ta[1] == 'CD':
@@ -309,10 +308,10 @@ def respond(senderid, tagged):
             sendResponse(senderid, prettyIngredientList(ingredients))
             sendResponse(senderid, "Do you have all the ingredients?")
             changestatus = True
-        elif status == 4:
+        elif status == 3:
             sendResponse(senderid, "Do you still want to continue with this recipe?")
             changestatus = True
-        elif status == 5:
+        elif status == 4:
             sendResponse(senderid, "K bye!")
             current_recipe = None
             changestatus = True
@@ -323,17 +322,14 @@ def respond(senderid, tagged):
 
 def sendBonAppetit(senderid):
     array = ["Bon Appétit", "Guten Appetit", "Eet Smakelijk", " Enjoy your meal", "Buon appetito", "Vel bekomme", "Bom apetite", "¡Buen apetito", "Smaklig måltid"]
-    r = random.randint(0, len(array))
+    r = random.randint(0, len(array)-1)
     sendResponse(senderid, array[r] + "!")
     
-def sendFoundRecipe(senderid, recipe):
-    sendResponse(senderid, prettyIngredientList(recipe["ingredients"]))
-    sendResponse(senderid, "This recipe is for " + str(current_recipe["portions"]) + " portions.")
-    sendResponse(senderid, "Do you want to make " + str(current_recipe["portions"]) + " portions?")
             
 def sendFoundRecipes(senderid, recipes):
     recString = listToString(recipes)
-    sendResponse(senderid, "I have found the following recipes: " + recString)
+    sendResponse(senderid, """I have found the following recipes:
+""" + recString)
     sendResponse(senderid, " Which one would you like to make? (please answer by using the name or the *ID* of the recipe)")
 
 def sendHelp(senderid):
