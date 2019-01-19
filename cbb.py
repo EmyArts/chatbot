@@ -243,7 +243,8 @@ def respond(senderid, tagged):
         current_recipe = None
         sendResponse(senderid, str("Hi, I'm Chef BOTticelliBOT, ready to suggest you a nice recipe. If you have any questions, please say *help*. How can I help you today?"))
         status = 1
-    if status == 1:
+        skip = True
+    if status == 1 and not skip:
         #checks if recipe name is mentioned
         recipe = identifyRecipeFromName(tagged)
         if not recipe == None:
@@ -283,13 +284,14 @@ def respond(senderid, tagged):
                 sendFoundRecipes(senderid, recipes)
             elif skip: 
                 sendResponse(senderid, "Sorry, I did not find any recipes meeting your requirements.")
-            elif len(tagged) > 1:
+            else:
                 sendResponse(senderid, "Sorry, I did not understand.")
     if not skip and not status == 0 and not status == 1:
         word = identifyYesNo(tagged)
         changestatus = False
         if word:
-            sendResponse(senderid, str(current_recipe["procedure"]))
+            sendResponse(senderid, "Let's make " + current_recipe["name"] + """:
+""" + str(current_recipe["procedure"]))
             sendBonAppetit(senderid)
             current_recipe = None
             status = 0
