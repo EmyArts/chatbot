@@ -56,7 +56,13 @@ def checkIngredients(i1, i2):
 def handle(msg):
     print(msg)
     chat(msg)
-               
+
+def identifyNumber(tagged):
+    for ta in tagged:
+        if toFloat(ta[0])>0:
+            return toFloat(ta[0])
+    return 0        
+              
 def identifyRecipeFromName(tagged):
     rec = None
     sentence = stringOutOfTagged(tagged)
@@ -117,15 +123,13 @@ def identifyTimeInText(tagged):
     if intersect_m == -1 and intersect_h == -1:
         return None
     elif not intersect_m == -1:
-        for i in range(0,intersect_m):
-            if tagged[i][1] == "CD":
-                time_val = toFloat(tagged[i][0])
-                return time_val
+        time_val = identifyNumber(tagged[:intersect_m])
+        if time_val > 0:
+            return time_val
     elif not intersect_h == -1:
-        for i in range(0,intersect_h):
-            if tagged[i][1] == "CD":
-                time_val = toFloat(tagged[i][0])
-                return time_val*60
+        time_val = identifyNumber(tagged[:intersect_h])
+        if time_val > 0:
+            return time_val*60
     return None
 
 def identifyBye(tagged):
@@ -221,6 +225,7 @@ def processText(text):
     return tagged
 
 def respond(senderid, tagged):
+    print(tagged)
     global status
     global current_recipe
     skip = False
@@ -292,17 +297,19 @@ def respond(senderid, tagged):
     if not skip and not status == 0 and not status == 1:
         word = identifyYesNo(tagged)
         changestatus = False
-        if word:
+        if word and status == 2:
+            sendResponse(senderid, prettyIngredientList(current_recipe["ingredients"]))
+            sendResponse(senderid, "Do you have all the ingredients?")
+            changestatus = True
+        elif word:
             sendResponse(senderid, "Let's make " + current_recipe["name"] + """:
 """ + str(current_recipe["procedure"]))
             sendBonAppetit(senderid)
             current_recipe = None
             status = 0
-        elif status == 2: 
+        elif not word and status == 2: 
             #Identify the amount
-            for ta in tagged:
-                if ta[1] == 'CD':
-                    amount = toFloat(ta[0])
+            amount = identifyNumber(tagged)
             #recalculate
             ingredients = adjustPortions(current_recipe, amount)
             sendResponse(senderid, prettyIngredientList(ingredients))
@@ -314,10 +321,11 @@ def respond(senderid, tagged):
         elif status == 4:
             sendResponse(senderid, "K bye!")
             current_recipe = None
-            changestatus = True
+            status == 0
             
         if changestatus:
-            status += 1
+            status = status + 1
+            changestatus = False
         
 
 def sendBonAppetit(senderid):
@@ -349,7 +357,10 @@ def toFloat(val):
     try:
         val = float(val * 1.0)
     except:
-        val = w2n.word_to_num(val)
+        try:
+            val = w2n.word_to_num(val)
+        except:
+            val = 0
     return val
         
 #ing_set = makeIngredientsSet()    
