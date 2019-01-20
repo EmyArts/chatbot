@@ -288,12 +288,12 @@ def respond(senderid, tagged):
                     rec2 = identifyRecipeFromIngredients(ingredients)
                     if len(rec2) > 0:
                         recipes = set(recipes).intersection(rec2)
-            if found:
+            if found and len(recipes) > 0:
                 sendFoundRecipes(senderid, recipes)
             elif skip: 
                 sendResponse(senderid, "Sorry, I did not find any recipes meeting your requirements.")
             else:
-                sendResponse(senderid, "Sorry, I did not understand.")
+               sendResponse(senderid, "Sorry, I did not understand.")
     if not skip and not status == 0 and not status == 1:
         word = identifyYesNo(tagged)
         changestatus = False
@@ -327,6 +327,17 @@ def respond(senderid, tagged):
             status = status + 1
             changestatus = False
         
+def sendAllRecipes(senderid):
+    recs = []
+    for recipe_file in os.listdir("recipes"):
+        recipe = json.loads(open("recipes/" + recipe_file).read())
+        recs.append(recipe['name'] + " *" + str(recipe['id']) + "*")
+    recString = listToString(recs)
+    sendResponse(senderid, """I have found the following recipes:
+""" + recString)
+    sendResponse(senderid, " Which one would you like to make? (please answer by using the name or the *ID* of the recipe)")
+    
+            
 
 def sendBonAppetit(senderid):
     array = ["Bon Appétit", "Guten Appetit", "Eet Smakelijk", " Enjoy your meal", "Buon appetito", "Vel bekomme", "Bom apetite", "¡Buen apetito", "Smaklig måltid"]
