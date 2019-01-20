@@ -73,6 +73,16 @@ def identifyRecipeFromName(tagged):
             return recipe        
     return rec
 
+def identifyRecipesFromName(tagged):
+    recs = set()
+    for ta in tagged:
+        for recipe_file in os.listdir("recipes"):
+            recipe = json.loads(open("recipes/" + recipe_file).read())
+            name = recipe['name']
+            if ta[0].lower() in name.lower():
+                recs.add(str(name + " *" + str(recipe['id']) + "*"))
+    return recs
+
 def identifyRecipeFromID(tagged):
     rec = None
     recid = -1
@@ -293,7 +303,10 @@ def respond(senderid, tagged):
             elif skip: 
                 sendResponse(senderid, "Sorry, I did not find any recipes meeting your requirements.")
             else:
-                if intersectionComplex(["recipe"],tagged) > -1:
+                recs = identifyRecipesFromName(tagged)
+                if len(recs) > 0:
+                    sendFoundRecipes(senderid,list(recs))
+                elif intersectionComplex(["recipe"],tagged) > -1:
                     sendAllRecipes(senderid)
                 else:
                     sendResponse(senderid, "Sorry, I did not understand.")
