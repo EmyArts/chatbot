@@ -152,6 +152,12 @@ def identifyHelp(tagged):
         return True
     return False
 
+def identifyStart(tagged):
+    text = stringOutOfTagged(tagged)
+    if "/start" in text:
+        return True
+    return False
+
 def identifyThanks(tagged):
     if not intersectionComplex(["thank", "thx"], tagged) == -1:
         return True
@@ -243,6 +249,7 @@ def respond(senderid, tagged):
     thx = identifyThanks(tagged)
     bye = identifyBye(tagged)
     hlp = identifyHelp(tagged)
+    start = identifyStart(tagged)
     recipes = {}
     if thx:
         sendResponse(senderid, str("You're welcome!"))
@@ -256,7 +263,9 @@ def respond(senderid, tagged):
         skip = True
     if status == 0 and not skip:
         current_recipe = None
-        sendResponse(senderid, str("Hi, I'm Chef BOTticelliBOT, ready to suggest you a nice recipe. If you have any questions, please say *help*. How can I help you today?"))
+        sendResponse(senderid, str("Hi, I'm Chef BOTticelliBOT, ready to suggest you a nice recipe. If you would like more information, please say *help*. How can I help you today?"))
+        if start: 
+            sendHelp(senderid)
         status = 1
         skip = True
     if status == 1 and not skip:
