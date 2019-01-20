@@ -293,7 +293,10 @@ def respond(senderid, tagged):
             elif skip: 
                 sendResponse(senderid, "Sorry, I did not find any recipes meeting your requirements.")
             else:
-               sendResponse(senderid, "Sorry, I did not understand.")
+                if intersectionComplex(["recipe"],tagged) > -1:
+                    sendAllRecipes(senderid)
+                else:
+                    sendResponse(senderid, "Sorry, I did not understand.")
     if not skip and not status == 0 and not status == 1:
         word = identifyYesNo(tagged)
         changestatus = False
